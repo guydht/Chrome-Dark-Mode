@@ -1,0 +1,108 @@
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.switch input {display:none;}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+}
+
+input.default:checked + .slider {
+  background-color: #444;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+body, html{
+	height: fit-content;
+}
+
+.card{
+	padding-top: 10px;
+	background: transparent !important;
+}
+
+.badge{
+	cursor: pointer;
+}
+
+#list{
+	transition: color .4s, background .4s;
+	color: black;
+	background: rgb(235, 235, 235);
+	padding: 10px;
+	margin: 5px;
+	width: 300px;
+}
+
+.domain-name{
+	margin-right: 15px;
+}
+
+#list.blacklist{
+	color: white;
+	background: rgb(20, 20, 20);
+}
+
+#list.blacklist #listTypeToggle:after{
+	content: 'BlackList';
+}
+
+#list #listTypeToggle:after{
+	content: 'WhiteList';
+}
+
+.blacklist #list-items{
+	background: rgb(20, 20, 20);
+}
+
+.blacklist .list-group-item{
+	background: rgb(50, 50, 50) !important;
+}
+
+.dark{
+	background: black;
+	color: white;
+}
+.center{
+	display: block;
+    left: 50%;
+    transform: translateX(-50%);
+}
