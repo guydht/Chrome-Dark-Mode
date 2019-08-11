@@ -1,0 +1,29 @@
+
+{
+	"manifest_version": 2,
+	"name": "Dark Mode",
+	"version": "6.9",
+	"browser_action": {
+		"default_title": "Global Dark Mode",
+		"default_popup": "popup/popup.html",
+		"default_icon": "popup/white.png"
+	},
+	"web_accessible_resources": ["*.png", "json/colorNameMappings.json"],
+	"background": {
+		"scripts": ["js/background.js"],
+		"persistent": false
+	},
+	"content_scripts": [
+		{
+			"matches": ["<all_urls>"],
+			"js": ["js/enhancments.js", "js/dark_mode.js"],
+			"run_at": "document_start",
+			"all_frames": true
+		}
+	],
+	"permissions": [
+		"storage",
+		"http://*/",
+	        "https://*/"
+	]
+}
