@@ -276,7 +276,7 @@ function changeCssRule(cssRule){
 }
 
 function isDarkRGB(rgbArr){
-	return rgbArr.reduce((acc, ele) => acc + ele, 0) / rgbArr.length <= 150;
+	return rgbArr.reduce((acc, ele) => acc + ele, 0) / rgbArr.length <= 175;
 }
 
 function isBlackOrWhite(rgbArr){
