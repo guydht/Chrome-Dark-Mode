@@ -60,7 +60,7 @@ async function fetchMappingJSON(){
 }
 
 chrome.storage.onChanged.addListener(function(data){
-	if(data.darkTheme)
+	if(data.darkTheme || data.currentList || data.Blacklist || data.WhiteList)
 		checkStorage();
 });
 
