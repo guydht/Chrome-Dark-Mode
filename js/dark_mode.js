@@ -24,41 +24,9 @@ let darkenParams = {keepDark: true},
 		"color": "text",
 		"fill": "fill",
 		"stroke": "stroke"
-	};
-
-defaultStyle.innerHTML = `
-body, body *{
-	caret-color: white;
-	border-color: rgb(50, 50, 50);
-}
-body *{
-	color: inherit;
-}
-body{
-	background: rgb(20, 20, 20); 
-	color: white;
-}
-input, select, textarea{
-	color: white; 
-	background: rgb(20, 20, 20);
-}
-button{
-	background: rgb(60, 60, 60); 
-	border: 1px solid rgb(100, 100, 100);
-}
-::-webkit-scrollbar{
-	width: initial;
-}
-::-webkit-scrollbar-thumb:hover{
-	background: #888;
-}
-::-webkit-scrollbar-thumb{
-	background: #666;
-}
-::-webkit-scrollbar-track{
-	background: rgb(35, 35 ,35);
-}
-`;
+	},
+	DEFAULT_TRANSITION_MILLISECONDS = 400;
+defaultStyle.href = chrome.extension.getURL("css/default_style.css");
 
 checkStorage().then(response => {
 	if(response){
@@ -120,9 +88,10 @@ async function activateDarkMode(window = this.window){
 		window.defaultStyle.disabled = false;
 
 	await new Promise(resolve => {
-		chrome.storage.local.get("doTransition", ({doTransition}) => {
+		chrome.storage.local.get(["doTransition", "transitionMilliSeconds"],
+		 ({doTransition, transitionMilliSeconds=DEFAULT_TRANSITION_MILLISECONDS}) => {
 			if(doTransition)
-				tempTransition(window);
+				tempTransition(window, transitionMilliSeconds);
 			resolve();
 		});
 	});
@@ -214,9 +183,10 @@ async function disableDarkMode(window = this.window){
 	window.clearInterval(window.listenToStyleSheetChange);
 	
 	await new Promise(resolve => {
-		chrome.storage.local.get("doTransition", ({doTransition}) => {
+		chrome.storage.local.get(["doTransition", "transitionMilliSeconds"], 
+		({doTransition, transitionMilliSeconds=DEFAULT_TRANSITION_MILLISECONDS}) => {
 			if(doTransition)
-				tempTransition(window);
+				tempTransition(window, transitionMilliSeconds);
 			resolve();
 		});
 	});
@@ -426,14 +396,14 @@ function changeRGB(rgbArr, {keepDark, keepBright, doInversion}){
 	return rgbArr;
 }
 
-function tempTransition(window, transitionTimeInSeconds = 0.4){
+function tempTransition(window, transitionTimeInMilliseconds){
 	let tmp = window.document.createElement("style");
 	tmp.innerHTML = ":root, :root *{transition: ";
 	propertiesMapping.entries().forEach(([prop, [params]]) => {
 		if(params !== brightenParams)
-			tmp.innerHTML += `${prop.replace(/[A-Z]/g, l => '-' + l.toLowerCase())} ${ transitionTimeInSeconds}s ease-out, `;
+			tmp.innerHTML += `${prop.replace(/[A-Z]/g, l => '-' + l.toLowerCase())} ${ transitionTimeInMilliseconds}ms ease-out, `;
 	});
 	tmp.innerHTML = tmp.innerHTML.slice(0, -2) + " !important;}";
-	setTimeout(tmp.remove.bind(tmp), transitionTimeInSeconds * 1000);
+	setTimeout(tmp.remove.bind(tmp), transitionTimeInMilliseconds);
 	window.document.head.prepend(tmp);
 }
