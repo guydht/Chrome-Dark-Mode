@@ -102,8 +102,9 @@ async function fetchMappingJSON(){
 	});
 }
 
-chrome.storage.onChanged.addListener(function(data, name){
-	checkStorage();
+chrome.storage.onChanged.addListener(function(data){
+	if(data.darkTheme)
+		checkStorage();
 });
 
 let	savedStyles = new Map,
