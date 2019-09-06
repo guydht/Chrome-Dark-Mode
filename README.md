@@ -7,9 +7,9 @@ A dark mode for all sites in chrome
 >
 > Blacklist/Whitelist of domains to activate dark mode in them
 >
-> *TODO: Control the brightness of backgrounds
+> Smooth transition when toggling dark theme
 >
-> *TODO: Smooth transition when toggling dark theme
+> *TODO: Control the brightness of backgrounds
 
 ## Screenshots:
 ![Github](screenshots/Github.png)
