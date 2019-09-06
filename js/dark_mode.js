@@ -161,10 +161,9 @@ function activateDarkMode(window = this.window){
 			if(mutationRecord.attributeName == 'style'){
 				if(!mutationTimeout.get(mutationRecord.target)){
 					mutationTimeout.set(mutationRecord.target, true);
+					setTimeout(() => mutationTimeout.set(mutationRecord.target, false));
 					changeStyle(mutationRecord.target.style, true);
 				}
-				else
-					setTimeout(() => mutationTimeout.set(mutationRecord.target, false));
 			}
 		}
 	});
