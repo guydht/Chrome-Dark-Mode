@@ -26,6 +26,7 @@ let darkenParams = {keepDark: true},
 		"stroke": "stroke"
 	},
 	DEFAULT_TRANSITION_MILLISECONDS = 400;
+
 defaultStyle.href = chrome.extension.getURL("css/default_style.css");
 
 checkStorage().then(response => {
@@ -66,12 +67,13 @@ let mappingWithRegex = [];
 async function fetchMappingJSON(){
 	let mapping = await fetch(chrome.extension.getURL("json/colorNameMappings.json")).then(r => r.json());
 	Object.entries(mapping).forEach(([key, val]) => {
-		mappingWithRegex.push([new RegExp(`(?<!\S)(${key})(?!\S)`), val]);
+		mappingWithRegex.push([new RegExp(`(?<!\\S)(${key})(?!\\S)`), val]);
 	});
 }
 
-chrome.storage.onChanged.addListener(function(data, name){
-	checkStorage();
+chrome.storage.onChanged.addListener(function(data){
+	if(data.darkTheme)
+		checkStorage();
 });
 
 let	savedStyles = new Map,
@@ -137,10 +139,9 @@ async function activateDarkMode(window = this.window){
 			if(mutationRecord.attributeName == 'style'){
 				if(!mutationTimeout.get(mutationRecord.target)){
 					mutationTimeout.set(mutationRecord.target, true);
+					setTimeout(() => mutationTimeout.set(mutationRecord.target, false));
 					changeStyle(mutationRecord.target.style, true);
 				}
-				else
-					setTimeout(() => mutationTimeout.set(mutationRecord.target, false));
 			}
 		}
 	});

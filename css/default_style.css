@@ -1,0 +1,31 @@
+body, body *{
+	caret-color: white;
+	border-color: rgb(50, 50, 50);
+}
+body *{
+	color: inherit;
+}
+body{
+	background: rgb(20, 20, 20); 
+	color: white;
+}
+input, select, textarea{
+	color: white; 
+	background: rgb(20, 20, 20);
+}
+button{
+	background: rgb(60, 60, 60); 
+	border: 1px solid rgb(100, 100, 100);
+}
+::-webkit-scrollbar{
+	width: initial;
+}
+::-webkit-scrollbar-thumb:hover{
+	background: #888;
+}
+::-webkit-scrollbar-thumb{
+	background: #666;
+}
+::-webkit-scrollbar-track{
+	background: rgb(35, 35 ,35);
+}
