@@ -1,10 +1,10 @@
 chrome.storage.local.get("darkTheme", function(response){
-	document.querySelector("#guydhtDarkThemeActivate").checked = response.darkTheme;
+	document.getElementById("guydhtDarkThemeActivate").checked = response.darkTheme;
 	if(response.darkTheme)
 		document.body.classList.add("dark");
 });
 
-document.querySelector("#guydhtDarkThemeActivate").onchange = function(){
+document.getElementById("guydhtDarkThemeActivate").onchange = function(){
 	chrome.storage.local.set({darkTheme: this.checked});
 	let mapping = {
 		'true': 'black',
@@ -12,6 +12,15 @@ document.querySelector("#guydhtDarkThemeActivate").onchange = function(){
 	};
 	chrome.browserAction.setIcon({path: `${mapping[this.checked.toString()]}.png`});
 	document.body.classList.toggle("dark");
+};
+
+chrome.storage.local.get("doTransition", ({doTransition}) => {
+	document.getElementById("guydhtTransitionToggle").checked = doTransition;
+});
+
+document.getElementById("guydhtTransitionToggle").onchange = function(){
+	console.log(this.checked)
+	chrome.storage.local.set({doTransition: this.checked});
 };
 
 chrome.storage.sync.get("currentList", function({currentList}){
