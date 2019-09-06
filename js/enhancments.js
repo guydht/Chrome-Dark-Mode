@@ -39,23 +39,6 @@ function createNodeList(elements){
 		}
 	});
 	return proxy;
-	var temp = document.createElement("dontMindMeJustHelping"),
-		parents = [],
-		index = [];
-	for(var i=0;i<elements.length;i++){
-		if(!elements[i] || !elements[i].querySelectorAll) continue;
-		parents[i] = elements[i].parentNode;
-		if(parents[i] != null)
-			index[i] = [...parents[i].childNodes].indexOf(elements[i]);
-	}
-	for(var i=0;i<elements.length;i++)
-		if(elements[i] && elements[i].querySelector) temp.append(elements[i]);
-	var nodeList = temp.querySelectorAll(":scope > *");
-	parents.forEach(function(ele, i){
-		if(ele != null)
-			ele.insertBefore(elements[i], ele.childNodes[index[i]]);
-	});
-	return nodeList;
 }
 window.open = function(url){
 	chrome.runtime.sendMessage({
@@ -279,13 +262,6 @@ defineProperty(String.prototype, "trunct", {
 		if(this.length <= limit) return this;
 		var substring = this.substr(0, limit - 1);
 		return substring.substr(0, substring.lastIndexOf(" ")) + "&hellip;";
-		var reg = new RegExp("^.{0," + (limit || 50) + "}[\S]*", "g"),
-			re = this.match(reg),
-			l = re[0].length;
-		re = re[0].replace(/\s$/,'');
-		if(l < this.length)
-			re = re + "&hellip;";
-		return re;
 	}
 });
 defineProperty(String.prototype, "capital", {
