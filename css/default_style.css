@@ -10,8 +10,8 @@ body{
 	color: white;
 }
 input, select, textarea{
-	color: white; 
-	background: rgb(20, 20, 20);
+	color: white;
+	background: transparent;
 }
 button{
 	background: rgb(60, 60, 60); 

@@ -1,7 +1,7 @@
 let darkenParams = {keepDark: true},
 	brightenParams = {keepBright: true},
 	alwaysChangeParams = {doInversion: true},
-	defaultStyle = document.createElement("style"),
+	defaultStyle = document.createElement("link"),
 	darkThemeInterval,
 	propertiesMapping = {
 		"background-color": [darkenParams, darkenParams.keys()[0]],
@@ -27,6 +27,7 @@ let darkenParams = {keepDark: true},
 	},
 	DEFAULT_TRANSITION_MILLISECONDS = 400;
 
+defaultStyle.rel = "stylesheet";
 defaultStyle.href = chrome.extension.getURL("css/default_style.css");
 
 checkStorage();
