@@ -98,7 +98,7 @@ let mappingWithRegex = [];
 async function fetchMappingJSON(){
 	let mapping = await fetch(chrome.extension.getURL("json/colorNameMappings.json")).then(r => r.json());
 	Object.entries(mapping).forEach(([key, val]) => {
-		mappingWithRegex.push([new RegExp(`(?<!\S)(${key})(?!\S)`), val]);
+		mappingWithRegex.push([new RegExp(`(?<!\\S)(${key})(?!\\S)`), val]);
 	});
 }
 
