@@ -106,3 +106,13 @@ body, html{
     left: 50%;
     transform: translateX(-50%);
 }
+
+#transitionMilliSeconds{
+  color: inherit;
+  background: transparent;
+  border: black 1px solid;
+}
+
+.dark #transitionMilliSeconds{
+  border-color: whitesmoke;
+}

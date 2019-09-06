@@ -14,6 +14,28 @@ document.querySelector("#guydhtDarkThemeActivate").onchange = function(){
 	document.body.classList.toggle("dark");
 };
 
+<<<<<<< Updated upstream
+=======
+chrome.storage.local.get("doTransition", ({doTransition}) => {
+	document.getElementById("guydhtTransitionToggle").checked = doTransition;
+	if(!doTransition)
+		document.getElementById("changeTransitionWrapper").classList.add("d-none");
+});
+
+document.getElementById("guydhtTransitionToggle").onchange = function(){
+	chrome.storage.local.set({doTransition: this.checked});
+	document.getElementById("changeTransitionWrapper").classList.toggle("d-none");
+};
+
+chrome.storage.local.get("transitionMilliSeconds", ({transitionMilliSeconds = 400}) => {
+	document.getElementById("transitionMilliSeconds").value = transitionMilliSeconds;	
+});
+
+document.getElementById("transitionMilliSeconds").onchagne = function(){
+	chrome.storage.local.get("transitionMilliSeconds", this.value);
+};
+
+>>>>>>> Stashed changes
 chrome.storage.sync.get("currentList", function({currentList}){
 	
 	if(currentList === "Blacklist"){

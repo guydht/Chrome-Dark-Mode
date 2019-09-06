@@ -8,7 +8,7 @@
 		"default_popup": "popup/popup.html",
 		"default_icon": "popup/white.png"
 	},
-	"web_accessible_resources": ["*.png", "json/colorNameMappings.json"],
+	"web_accessible_resources": ["*.png", "json/colorNameMappings.json", "css/default_style.css"],
 	"background": {
 		"scripts": ["js/background.js"],
 		"persistent": false
