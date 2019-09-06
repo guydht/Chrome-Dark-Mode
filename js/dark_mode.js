@@ -1,23 +1,23 @@
-let darkenParams = {keepDark: true},
-	brightenParams = {keepBright: true},
-	alwaysChangeParams = {doInversion: true},
+let darkenParams = [{keepDark: true}, "keepDark"],
+	brightenParams = [{keepBright: true}, "keepBright"],
+	alwaysChangeParams = [{doInversion: true}, "doInversion"],
 	defaultStyle = document.createElement("link"),
 	darkThemeInterval,
 	propertiesMapping = {
-		"background-color": [darkenParams, darkenParams.keys()[0]],
-		"background": [darkenParams, darkenParams.keys()[0]],
-		"background-color": [darkenParams, darkenParams.keys()[0]],
-		"background-image": [darkenParams, darkenParams.keys()[0]],
-		"text-shadow": [darkenParams, darkenParams.keys()[0]],
-		"border-bottom-color": [darkenParams, darkenParams.keys()[0]],
-		"border-top-color": [darkenParams, darkenParams.keys()[0]],
-		"border-left-color": [darkenParams, darkenParams.keys()[0]],
-		"border-right-color": [darkenParams, darkenParams.keys()[0]],
-		"outline": [darkenParams, darkenParams.keys()[0]],
-		"box-shadow": [darkenParams, darkenParams.keys()[0]],
-		"color": [brightenParams, brightenParams.keys()[0]],
-		"fill": [alwaysChangeParams, alwaysChangeParams.keys()[0]],
-		"stroke": [alwaysChangeParams, alwaysChangeParams.keys()[0]]
+		"background-color": darkenParams,
+		"background": darkenParams,
+		"background-color": darkenParams,
+		"background-image": darkenParams,
+		"text-shadow": darkenParams,
+		"border-bottom-color": darkenParams,
+		"border-top-color": darkenParams,
+		"border-left-color": darkenParams,
+		"border-right-color": darkenParams,
+		"outline": darkenParams,
+		"box-shadow": darkenParams,
+		"color": brightenParams,
+		"fill": alwaysChangeParams,
+		"stroke": alwaysChangeParams
 	},
 	attributesMapping = {
 		"background-color": "bgColor",
@@ -255,7 +255,7 @@ function isBlackOrWhite(rgbArr){
 }
 
 function isBrightRGB(rgbArr){
-	return rgbArr.reduce((acc, ele) => acc + ele, 0) / rgbArr.length >= 180;
+	return rgbArr.reduce((acc, ele) => acc + ele, 0) / rgbArr.length >= 180 || rgbArr.max() > 250;
 }
 
 function rgbTextToRGB(rgbText){
@@ -316,8 +316,7 @@ function hexToRGB(hex){
 
 async function changeStyle(cssStyleDecleration, setStyle = false){
 	let changesArr = [];
-	propertiesMapping.keys().forEach(prop => {
-		let params = propertiesMapping[prop];
+	propertiesMapping.entries().forEach(([prop, params]) => {
 		if(!params || typeof params === "function") return;
 		let originalStyleText = colorNameToRGB(cssStyleDecleration.getPropertyValue(prop)),
 			found = changedStyles[params[1] + originalStyleText];
@@ -389,7 +388,7 @@ function changeRGB(rgbArr, {keepDark, keepBright, doInversion}){
 function tempTransition(window, transitionTimeInMilliseconds){
 	let tmp = window.document.createElement("style");
 	tmp.innerHTML = ":root, :root *{transition: ";
-	propertiesMapping.entries().forEach(([prop, [params]]) => {
+	propertiesMapping.entries().forEach(([prop, params]) => {
 		if(params !== brightenParams)
 			tmp.innerHTML += `${prop.replace(/[A-Z]/g, l => '-' + l.toLowerCase())} ${ transitionTimeInMilliseconds}ms ease-out, `;
 	});
