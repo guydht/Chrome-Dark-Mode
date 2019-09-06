@@ -21,8 +21,7 @@
 						<input type="checkbox" class="default" id="guydhtDarkThemeActivate">
 						<span class="slider round"></span>
 					</label>
-					<button class="btn btn-danger" id="add-domain">
-						{action} "{x}" to {y}?
+					<button class="btn btn-danger" id="addDomain" data-inner-h-t-m-l-template='{action} "{domain}" {to/from} {listType}?'>
 					</button>
 					<div class="row" id="list">
 						<h2 id="listTypeToggle" class="w-100"></h2>
@@ -47,7 +46,7 @@
 					<p class="card-text">
 						Transition Time in Miliseconds:
 					</p>
-					<input type="number" class="form-control" id="transitionMilliSeconds" />
+					<input type="number" class="form-control" id="transitionMilliSeconds" placeholder="400" />
 				</div>
 			</div>
 		</div>

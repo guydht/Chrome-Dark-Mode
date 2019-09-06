@@ -25,7 +25,7 @@ document.getElementById("guydhtTransitionToggle").onchange = function(){
 	document.getElementById("changeTransitionWrapper").classList.toggle("d-none");
 };
 
-chrome.storage.local.get("transitionMilliSeconds", ({transitionMilliSeconds = 400}) => {
+chrome.storage.local.get("transitionMilliSeconds", ({transitionMilliSeconds}) => {
 	document.getElementById("transitionMilliSeconds").value = transitionMilliSeconds;	
 });
 
@@ -39,7 +39,7 @@ chrome.storage.sync.get("currentList", function({currentList}){
 		document.querySelector("#list").classList.add("blacklist");
 	}
 	
-	let addDomain = document.querySelector("#add-domain");
+	let addDomain = document.querySelector("#addDomain");
 	chrome.storage.sync.get(currentList, function({[currentList]: list}){
 		fillListWithList(list);
 
@@ -48,8 +48,7 @@ chrome.storage.sync.get("currentList", function({currentList}){
 			addDomain.dataset.currenturl = url;
 			try{
 				let domain = new URL(url).origin;
-				addDomain.innerHTML = addDomain.innerHTML.replace("{x}", domain).replace("{y}", currentList)
-					.replace("{action}", list.includes(domain) ? "Remove" : "Add");
+				setAddDomainButtonText(domain, currentList, list);
 			}catch(e){
 				addDomain.innerHTML = `Sorry, I can't run in this page!`;
 			}
@@ -65,14 +64,13 @@ chrome.storage.sync.get("currentList", function({currentList}){
 					list.push(domain);
 					fillListWithList(list);
 					chrome.storage.sync.set({[currentList]: list});
-					addDomain.innerHTML = addDomain.innerHTML.replace("Add", "Remove");
 				}
 				else{
 					list.splice(list.indexOf(domain), 1);
 					fillListWithList(list);
 					chrome.storage.sync.set({[currentList]: list});
-					addDomain.innerHTML = addDomain.innerHTML.replace("Remove", "Add");
 				}
+				setAddDomainButtonText(domain, currentList, list);
 			});
 		});
 	};
@@ -84,12 +82,8 @@ document.querySelector("#listTypeToggle").onclick = function(){
 	chrome.storage.sync.set({currentList});
 	chrome.storage.sync.get(currentList, function({[currentList]: list}){
 		fillListWithList(list);
+		setAddDomainButtonText(null, currentList, list);
 	});
-	let ele = document.querySelector("#add-domain");
-	if(this.parentNode.classList.contains("blacklist"))
-		ele.innerHTML = ele.innerHTML.replace("Whitelist", "Blacklist");
-	else
-		ele.innerHTML = ele.innerHTML.replace("Blacklist", "Whitelist");
 }
 
 function fillListWithList(list = []){
@@ -109,5 +103,27 @@ function fillListWithList(list = []){
 				});
 			});
 		};
+	});
+}
+
+function setAddDomainButtonText(domain, listType, list){
+	var addDomain = document.getElementById("addDomain"),
+		domain = domain || addDomain.dataset.domain,
+		listType = listType || addDomain.dataset.domain,
+		action = "Add";
+	if(list.includes(domain))
+		action = "Remove"
+	addDomain.dataset.domain = domain;
+	addDomain.dataset.listType = listType;
+	addDomain.dataset.action = action;
+	loadTemplateHTML(addDomain, {domain, listType, action, "to/from": list.includes(domain) ? "from" : "to"});
+}
+
+function loadTemplateHTML(element, data){
+	element.innerHTML = element.dataset.innerHTMLTemplate.replace(/\{[^\{\}]+\}/g, str => {
+		str = str.slice(1, -1);
+		if(str in data)
+			return data[str];
+		return str;
 	});
 }
