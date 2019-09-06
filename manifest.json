@@ -2,13 +2,13 @@
 {
 	"manifest_version": 2,
 	"name": "Dark Mode",
-	"version": "6.9",
+	"version": "6.9.1",
 	"browser_action": {
 		"default_title": "Global Dark Mode",
 		"default_popup": "popup/popup.html",
 		"default_icon": "popup/white.png"
 	},
-	"web_accessible_resources": ["*.png", "json/colorNameMappings.json"],
+	"web_accessible_resources": ["*.png", "json/colorNameMappings.json", "css/default_style.css"],
 	"background": {
 		"scripts": ["js/background.js"],
 		"persistent": false
@@ -24,6 +24,6 @@
 	"permissions": [
 		"storage",
 		"http://*/",
-	        "https://*/"
+	    "https://*/"
 	]
 }

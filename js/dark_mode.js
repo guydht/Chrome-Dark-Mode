@@ -24,55 +24,12 @@ let darkenParams = {keepDark: true},
 		"color": "text",
 		"fill": "fill",
 		"stroke": "stroke"
-	};
+	},
+	DEFAULT_TRANSITION_MILLISECONDS = 400;
 
-defaultStyle.innerHTML = `
-body, body *{
-	caret-color: white;
-	border-color: rgb(50, 50, 50);
-}
-body *{
-	color: inherit;
-}
-body{
-	background: rgb(20, 20, 20); 
-	color: white;
-}
-input, select, textarea{
-	color: white; 
-	background: rgb(20, 20, 20);
-}
-button{
-	background: rgb(60, 60, 60); 
-	border: 1px solid rgb(100, 100, 100);
-}
-::-webkit-scrollbar{
-	width: initial;
-}
-::-webkit-scrollbar-thumb:hover{
-	background: #888;
-}
-::-webkit-scrollbar-thumb{
-	background: #666;
-}
-::-webkit-scrollbar-track{
-	background: rgb(35, 35 ,35);
-}
-`;
+defaultStyle.href = chrome.extension.getURL("css/default_style.css");
 
-checkStorage().then(response => {
-	if(response){
-		let tempStyle = document.createElement("style"); 
-		document.documentElement.append(tempStyle);
-		// tempStyle.innerHTML = ":root, :root *{background-color: rgb(20, 20, 20); color: white;}";
-		waitFor(function(){
-			return document.readyState == 'complete';
-		},
-		function(){
-			tempStyle.remove();
-		}, 0);
-	}
-});
+checkStorage();
 
 function checkStorage(){
 	return new Promise(resolve => {
@@ -98,12 +55,13 @@ let mappingWithRegex = [];
 async function fetchMappingJSON(){
 	let mapping = await fetch(chrome.extension.getURL("json/colorNameMappings.json")).then(r => r.json());
 	Object.entries(mapping).forEach(([key, val]) => {
-		mappingWithRegex.push([new RegExp(`(?<!\S)(${key})(?!\S)`), val]);
+		mappingWithRegex.push([new RegExp(`(?<!\\S)(${key})(?!\\S)`), val]);
 	});
 }
 
-chrome.storage.onChanged.addListener(function(data, name){
-	checkStorage();
+chrome.storage.onChanged.addListener(function(data){
+	if(data.darkTheme || data.currentList || data.Blacklist || data.WhiteList)
+		checkStorage();
 });
 
 let	savedStyles = new Map,
@@ -111,9 +69,22 @@ let	savedStyles = new Map,
 
 let mutationTimeout = new Map;
 
-function activateDarkMode(window = this.window){
-	window.defaultStyle = defaultStyle.cloneNode(true);
-	window.document.head.prepend(window.defaultStyle)
+async function activateDarkMode(window = this.window){
+	if(!window.defaultStyle){
+		window.defaultStyle = defaultStyle.cloneNode(true);
+		window.document.head.prepend(window.defaultStyle)
+	}
+	else
+		window.defaultStyle.disabled = false;
+
+	await new Promise(resolve => {
+		chrome.storage.local.get(["doTransition", "transitionMilliSeconds"],
+		 ({doTransition, transitionMilliSeconds=DEFAULT_TRANSITION_MILLISECONDS}) => {
+			if(doTransition)
+				tempTransition(window, transitionMilliSeconds);
+			resolve();
+		});
+	});
 
 	let currentStyleSheets = [...window.document.styleSheets];
 	window.listenToStyleSheetChange = window.setInterval(() => {
@@ -128,11 +99,6 @@ function activateDarkMode(window = this.window){
 	savedStyles.forEach((value, style) => {
 		for([prop, val] of Object.entries(value.new))
 			style.setProperty(prop, val);
-	});
-
-	chrome.storage.sync.get("doTransition", ({doTransition}) => {
-		if(doTransition)
-			tempTransition(window);
 	});
 	changePage(window, true);
 
@@ -161,10 +127,9 @@ function activateDarkMode(window = this.window){
 			if(mutationRecord.attributeName == 'style'){
 				if(!mutationTimeout.get(mutationRecord.target)){
 					mutationTimeout.set(mutationRecord.target, true);
+					setTimeout(() => mutationTimeout.set(mutationRecord.target, false));
 					changeStyle(mutationRecord.target.style, true);
 				}
-				else
-					setTimeout(() => mutationTimeout.set(mutationRecord.target, false));
 			}
 		}
 	});
@@ -178,9 +143,10 @@ function activateDarkMode(window = this.window){
 
 function changeElement(ele){
 	if(
-		ele.tagName && ele.tagName.toLowerCase() == "svg" || 
+		(ele.tagName && ele.tagName.toLowerCase() == "svg") || 
 		ele.ancestors.some(ele => ele.tagName && ele.tagName.toLowerCase() == "svg") ||
-		attributesMapping.values().some(attr => ele.hasAttribute(attr))){
+		attributesMapping.values().some(attr => ele.hasAttribute(attr))
+	){
 		changeStyle(getComputedStyle(ele)).then(changes => {
 			ele.setProperty = ele.setAttribute.bind(ele);
 			for(let [prop, oldVal, newVal] of changes){
@@ -200,19 +166,23 @@ function changeElement(ele){
 		changeStyle(ele.style, true);
 }
 
-function disableDarkMode(window = this.window){
-	window.defaultStyle.remove();
+async function disableDarkMode(window = this.window){
+	window.defaultStyle.disabled = true;
 
 	window.clearInterval(window.listenToStyleSheetChange);
+	
+	await new Promise(resolve => {
+		chrome.storage.local.get(["doTransition", "transitionMilliSeconds"], 
+		({doTransition, transitionMilliSeconds=DEFAULT_TRANSITION_MILLISECONDS}) => {
+			if(doTransition)
+				tempTransition(window, transitionMilliSeconds);
+			resolve();
+		});
+	});
 
 	savedStyles.forEach((value, style) => {
 		for([prop, val] of Object.entries(value.old))
 			style.setProperty(prop, val);
-	});
-	
-	chrome.storage.sync.get("doTransition", ({doTransition}) => {
-		if(doTransition)
-			tempTransition(window);
 	});
 
 	stopListeningToPageStuff();
@@ -415,14 +385,14 @@ function changeRGB(rgbArr, {keepDark, keepBright, doInversion}){
 	return rgbArr;
 }
 
-function tempTransition(window, transitionTimeInSeconds = .4){
+function tempTransition(window, transitionTimeInMilliseconds){
 	let tmp = window.document.createElement("style");
 	tmp.innerHTML = ":root, :root *{transition: ";
 	propertiesMapping.entries().forEach(([prop, [params]]) => {
 		if(params !== brightenParams)
-			tmp.innerHTML += `${prop.replace(/[A-Z]/g, l => '-' + l.toLowerCase())} ${ transitionTimeInSeconds}s ease-out, `;
+			tmp.innerHTML += `${prop.replace(/[A-Z]/g, l => '-' + l.toLowerCase())} ${ transitionTimeInMilliseconds}ms ease-out, `;
 	});
 	tmp.innerHTML = tmp.innerHTML.slice(0, -2) + " !important;}";
-	setTimeout(tmp.remove.bind(tmp), transitionTimeInSeconds * 1000);
+	setTimeout(tmp.remove.bind(tmp), transitionTimeInMilliseconds);
 	window.document.head.prepend(tmp);
 }
