@@ -29,19 +29,7 @@ let darkenParams = {keepDark: true},
 
 defaultStyle.href = chrome.extension.getURL("css/default_style.css");
 
-checkStorage().then(response => {
-	if(response){
-		let tempStyle = document.createElement("style"); 
-		document.documentElement.append(tempStyle);
-		// tempStyle.innerHTML = ":root, :root *{background-color: rgb(20, 20, 20); color: white;}";
-		waitFor(function(){
-			return document.readyState == 'complete';
-		},
-		function(){
-			tempStyle.remove();
-		}, 0);
-	}
-});
+checkStorage();
 
 function checkStorage(){
 	return new Promise(resolve => {
