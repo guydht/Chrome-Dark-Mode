@@ -110,9 +110,7 @@ body, html{
 #transitionMilliSeconds{
   color: inherit;
   background: transparent;
-  border: black 1px solid;
-}
-
-.dark #transitionMilliSeconds{
-  border-color: whitesmoke;
+  width: auto;
+  margin: 0 12.5%;
+  text-align: center;
 }

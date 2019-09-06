@@ -81,9 +81,22 @@ let	savedStyles = new Map,
 
 let mutationTimeout = new Map;
 
-function activateDarkMode(window = this.window){
-	window.defaultStyle = defaultStyle.cloneNode(true);
-	window.document.head.prepend(window.defaultStyle)
+async function activateDarkMode(window = this.window){
+	if(!window.defaultStyle){
+		window.defaultStyle = defaultStyle.cloneNode(true);
+		window.document.head.prepend(window.defaultStyle)
+	}
+	else
+		window.defaultStyle.disabled = false;
+
+	await new Promise(resolve => {
+		chrome.storage.local.get(["doTransition", "transitionMilliSeconds"],
+		 ({doTransition, transitionMilliSeconds=DEFAULT_TRANSITION_MILLISECONDS}) => {
+			if(doTransition)
+				tempTransition(window, transitionMilliSeconds);
+			resolve();
+		});
+	});
 
 	let currentStyleSheets = [...window.document.styleSheets];
 	window.listenToStyleSheetChange = window.setInterval(() => {
@@ -98,11 +111,6 @@ function activateDarkMode(window = this.window){
 	savedStyles.forEach((value, style) => {
 		for([prop, val] of Object.entries(value.new))
 			style.setProperty(prop, val);
-	});
-
-	chrome.storage.sync.get("doTransition", ({doTransition}) => {
-		if(doTransition)
-			tempTransition(window);
 	});
 	changePage(window, true);
 
@@ -147,9 +155,10 @@ function activateDarkMode(window = this.window){
 
 function changeElement(ele){
 	if(
-		ele.tagName && ele.tagName.toLowerCase() == "svg" || 
+		(ele.tagName && ele.tagName.toLowerCase() == "svg") || 
 		ele.ancestors.some(ele => ele.tagName && ele.tagName.toLowerCase() == "svg") ||
-		attributesMapping.values().some(attr => ele.hasAttribute(attr))){
+		attributesMapping.values().some(attr => ele.hasAttribute(attr))
+	){
 		changeStyle(getComputedStyle(ele)).then(changes => {
 			ele.setProperty = ele.setAttribute.bind(ele);
 			for(let [prop, oldVal, newVal] of changes){
@@ -169,19 +178,23 @@ function changeElement(ele){
 		changeStyle(ele.style, true);
 }
 
-function disableDarkMode(window = this.window){
-	window.defaultStyle.remove();
+async function disableDarkMode(window = this.window){
+	window.defaultStyle.disabled = true;
 
 	window.clearInterval(window.listenToStyleSheetChange);
+	
+	await new Promise(resolve => {
+		chrome.storage.local.get(["doTransition", "transitionMilliSeconds"], 
+		({doTransition, transitionMilliSeconds=DEFAULT_TRANSITION_MILLISECONDS}) => {
+			if(doTransition)
+				tempTransition(window, transitionMilliSeconds);
+			resolve();
+		});
+	});
 
 	savedStyles.forEach((value, style) => {
 		for([prop, val] of Object.entries(value.old))
 			style.setProperty(prop, val);
-	});
-	
-	chrome.storage.sync.get("doTransition", ({doTransition}) => {
-		if(doTransition)
-			tempTransition(window);
 	});
 
 	stopListeningToPageStuff();
@@ -384,7 +397,7 @@ function changeRGB(rgbArr, {keepDark, keepBright, doInversion}){
 	return rgbArr;
 }
 
-function tempTransition(window, transitionTimeInSeconds = .4){
+function tempTransition(window, transitionTimeInMilliseconds){
 	let tmp = window.document.createElement("style");
 	tmp.innerHTML = ":root, :root *{transition: ";
 	propertiesMapping.entries().forEach(([prop, [params]]) => {

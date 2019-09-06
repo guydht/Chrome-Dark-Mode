@@ -1,10 +1,10 @@
 chrome.storage.local.get("darkTheme", function(response){
-	document.querySelector("#guydhtDarkThemeActivate").checked = response.darkTheme;
+	document.getElementById("guydhtDarkThemeActivate").checked = response.darkTheme;
 	if(response.darkTheme)
 		document.body.classList.add("dark");
 });
 
-document.querySelector("#guydhtDarkThemeActivate").onchange = function(){
+document.getElementById("guydhtDarkThemeActivate").onchange = function(){
 	chrome.storage.local.set({darkTheme: this.checked});
 	let mapping = {
 		'true': 'black',
@@ -14,8 +14,6 @@ document.querySelector("#guydhtDarkThemeActivate").onchange = function(){
 	document.body.classList.toggle("dark");
 };
 
-<<<<<<< Updated upstream
-=======
 chrome.storage.local.get("doTransition", ({doTransition}) => {
 	document.getElementById("guydhtTransitionToggle").checked = doTransition;
 	if(!doTransition)
@@ -31,11 +29,10 @@ chrome.storage.local.get("transitionMilliSeconds", ({transitionMilliSeconds = 40
 	document.getElementById("transitionMilliSeconds").value = transitionMilliSeconds;	
 });
 
-document.getElementById("transitionMilliSeconds").onchagne = function(){
-	chrome.storage.local.get("transitionMilliSeconds", this.value);
+document.getElementById("transitionMilliSeconds").onchange = function(){
+	chrome.storage.local.set({"transitionMilliSeconds": this.value});
 };
 
->>>>>>> Stashed changes
 chrome.storage.sync.get("currentList", function({currentList}){
 	
 	if(currentList === "Blacklist"){
