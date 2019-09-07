@@ -25,7 +25,9 @@ let darkenParams = [{keepDark: true}, "keepDark"],
 		"fill": "fill",
 		"stroke": "stroke"
 	},
-	DEFAULT_TRANSITION_MILLISECONDS = 400;
+	DEFAULT_TRANSITION_MILLISECONDS = 400,
+	disabledCssElements = [],
+	addedCssElements = [];
 
 defaultStyle.rel = "stylesheet";
 defaultStyle.href = chrome.extension.getURL("css/default_style.css");
@@ -86,6 +88,9 @@ async function activateDarkMode(window = this.window){
 			resolve();
 		});
 	});
+
+	disabledCssElements.forEach(cssElement => cssElement.disabled = true);
+	addedCssElements.forEach(cssElement => cssElement.disabled = false);
 
 	let currentStyleSheets = [...window.document.styleSheets];
 	window.listenToStyleSheetChange = window.setInterval(() => {
@@ -168,7 +173,8 @@ async function changeElement(ele){
 }
 
 async function disableDarkMode(window = this.window){
-	window.defaultStyle.disabled = true;
+	if(window.defaultStyle)
+		window.defaultStyle.disabled = true;
 
 	window.clearInterval(window.listenToStyleSheetChange);
 	
@@ -180,6 +186,9 @@ async function disableDarkMode(window = this.window){
 			resolve();
 		});
 	});
+
+	disabledCssElements.forEach(cssElement => cssElement.disabled = false);
+	addedCssElements.forEach(cssElement => cssElement.disabled = true);
 
 	savedStyles.forEach((value, style) => {
 		for([prop, val] of Object.entries(value.old))
@@ -231,7 +240,7 @@ async function changeStyleSheet(styleSheet){
 			await changeCssRule(cssRule);
 	}
 	catch(e){
-		if(!styleSheet.ownerNode || !styleSheet.ownerNode.dataset.guydhtWillRemove)
+		if(!styleSheet.ownerNode && !styleSheet.disabled)
 			await replaceCrossOriginStyle(window, styleSheet.href, styleSheet.ownerNode);
 	}
 }
@@ -279,7 +288,6 @@ function invertRGB(rgbArr, offset = 0){
 
 function replaceCrossOriginStyle(window, href, styleElement){
 	return new Promise(resolve => {
-		if(styleElement) styleElement.dataset.guydhtWillRemove = true;
 		chrome.runtime.sendMessage({
 			request: true,
 			url: href
@@ -287,7 +295,11 @@ function replaceCrossOriginStyle(window, href, styleElement){
 			let style = window.document.createElement("style");
 			style.innerHTML = response.responseText;
 			(styleElement || document.head.children[0]).insertAdjacentElement('beforebegin', style);
-			if(styleElement) styleElement.disabled = true;
+			if(styleElement){
+				disabledCssElements.push(styleElement);
+				styleElement.disabled = true;
+			}
+			addedCssElements.push(style);
 			resolve();
 		});
 	});
