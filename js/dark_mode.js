@@ -101,7 +101,7 @@ async function activateDarkMode(window = this.window){
 		for([prop, val] of Object.entries(value.new))
 			style.setProperty(prop, val);
 	});
-	changePage(window, true);
+	await changePage(window, true);
 
 	listenToPageNodeChanges(window, function(mutationRecords){
 		for(let mutationRecord of mutationRecords){
@@ -142,29 +142,28 @@ async function activateDarkMode(window = this.window){
 	});
 }
 
-function changeElement(ele){
+async function changeElement(ele){
 	if(
 		(ele.tagName && ele.tagName.toLowerCase() == "svg") || 
 		ele.ancestors.some(ele => ele.tagName && ele.tagName.toLowerCase() == "svg") ||
 		attributesMapping.values().some(attr => ele.hasAttribute(attr))
 	){
-		changeStyle(getComputedStyle(ele)).then(changes => {
-			ele.setProperty = ele.setAttribute.bind(ele);
-			for(let [prop, oldVal, newVal] of changes){
-				if(attributesMapping[prop] && ele.hasAttribute(attributesMapping[prop])){
-					prop = attributesMapping[prop];
-					addToPrevStyle(ele, prop, oldVal, newVal);
-					ele.setAttribute(prop, newVal);
-				}
-				else if(ele.style[prop]){
-					addToPrevStyle(ele.style, prop, oldVal, newVal);
-					ele.style.setProperty(prop, newVal);
-				}
+		let changes = await changeStyle(getComputedStyle(ele));
+		ele.setProperty = ele.setAttribute.bind(ele);
+		for(let [prop, oldVal, newVal] of changes){
+			if(attributesMapping[prop] && ele.hasAttribute(attributesMapping[prop])){
+				prop = attributesMapping[prop];
+				addToPrevStyle(ele, prop, oldVal, newVal);
+				ele.setAttribute(prop, newVal);
 			}
-		});
+			else if(ele.style[prop]){
+				addToPrevStyle(ele.style, prop, oldVal, newVal);
+				ele.style.setProperty(prop, newVal);
+			}
+		}
 	}
 	else
-		changeStyle(ele.style, true);
+		await changeStyle(ele.style, true);
 }
 
 async function disableDarkMode(window = this.window){
@@ -217,33 +216,33 @@ function stopListeningToPageStuff(){
 }
 
 let attributesSelector = attributesMapping.values().map(ele => `[${ele}]`).join(", ");
-function changePage(window, doExtraWork = false){
+async function changePage(window, doExtraWork = false){
 	for(let styleSheet of window.document.styleSheets)
-		changeStyleSheet(styleSheet);
+		await changeStyleSheet(styleSheet);
 	if(doExtraWork)
-		window.document.querySelectorAll("svg, svg *, [style], " + attributesSelector).forEach(changeElement);
+		await window.document.querySelectorAll("svg, svg *, [style], " + attributesSelector).map(changeElement);
 }
 
-function changeStyleSheet(styleSheet){
+async function changeStyleSheet(styleSheet){
 	try{
 		for(let cssRule of styleSheet.cssRules)
-			changeCssRule(cssRule);
+			await changeCssRule(cssRule);
 	}
 	catch(e){
 		if(!styleSheet.ownerNode || !styleSheet.ownerNode.dataset.guydhtWillRemove)
-			replaceCrossOriginStyle(window, styleSheet.href, styleSheet.ownerNode);
+			await replaceCrossOriginStyle(window, styleSheet.href, styleSheet.ownerNode);
 	}
 }
 
-function changeCssRule(cssRule){
+async function changeCssRule(cssRule){
 	let style = cssRule.style;
 	if(style)
-		changeStyle(style, true);
+		await changeStyle(style, true);
 	if(cssRule.styleSheet)
-		changeStyleSheet(cssRule.styleSheet);
+		await changeStyleSheet(cssRule.styleSheet);
 	else if(cssRule.cssRules)
 		for(let childCssRule of cssRule.cssRules)
-			changeCssRule(childCssRule);
+			await changeCssRule(childCssRule);
 }
 
 function isDarkRGB(rgbArr){
@@ -277,15 +276,18 @@ function invertRGB(rgbArr, offset = 0){
 }
 
 function replaceCrossOriginStyle(window, href, styleElement){
-	if(styleElement) styleElement.dataset.guydhtWillRemove = true;
-	chrome.runtime.sendMessage({
-		request: true,
-		url: href
-	}, function(response){
-		let style = window.document.createElement("style");
-		style.innerHTML = response.responseText;
-		(styleElement || document.head.children[0]).insertAdjacentElement('beforebegin', style);
-		if(styleElement) styleElement.disabled = true;
+	return new Promise(resolve => {
+		if(styleElement) styleElement.dataset.guydhtWillRemove = true;
+		chrome.runtime.sendMessage({
+			request: true,
+			url: href
+		}, function(response){
+			let style = window.document.createElement("style");
+			style.innerHTML = response.responseText;
+			(styleElement || document.head.children[0]).insertAdjacentElement('beforebegin', style);
+			if(styleElement) styleElement.disabled = true;
+			resolve();
+		});
 	});
 }
 
