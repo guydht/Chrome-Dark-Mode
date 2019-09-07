@@ -15,8 +15,8 @@ let darkenParams = [{keepDark: true}, "keepDark"],
 		"border-right-color": darkenParams,
 		"outline": darkenParams,
 		"box-shadow": darkenParams,
+		"fill": darkenParams,
 		"color": brightenParams,
-		"fill": alwaysChangeParams,
 		"stroke": alwaysChangeParams
 	},
 	attributesMapping = {
