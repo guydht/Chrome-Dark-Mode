@@ -389,13 +389,13 @@ function doEnhancements(win){
 			}
 			if(path.length == 0) return id;
 			path = path.reduce((accu, val) => {
-				if(val.tagName == null) return accu.tagName || accu;
+				if(val.tagName == null) return accu;
 				var toAdd = "";
-				if(val.parentNode != null && val.parentNode.constructor != HTMLDocument)
-					if(val.parentNode.children.some(ele => ele != val && ele.tagName == val.tagName))
-						toAdd = ":nth-child(" + (val.parentNode.children.indexOf(val) + 1) + ")";
-				return val.tagName + toAdd + " > " + (accu.tagName || accu);
-			});
+				if(val.parentNode != null && val.parentNode.children &&
+				[...val.parentNode.children].some(ele => ele != val && ele.tagName == val.tagName))
+					toAdd = ":nth-child(" + (val.parentNode.children.indexOf(val) + 1) + ")";
+				return val.tagName + toAdd + " > " + accu;
+			}, "").slice(0, -3);
 			if(id == "#")
 				return path;
 			return id + " " + path;
