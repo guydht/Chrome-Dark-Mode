@@ -1,5 +1,4 @@
 function doEnhancements(win){
-	win.NodeList = NodeList;
 	class NodeList {
 		constructor(elements) {
 			this[Symbol.iterator] = function () {
@@ -26,6 +25,7 @@ function doEnhancements(win){
 			this.length = elements.length;
 		}
 	}
+	win.NodeList = NodeList;
 	win.createNodeList = createNodeList;
 	function createNodeList(elements){
 		if(!elements.forEach) return false;
