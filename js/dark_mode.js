@@ -231,7 +231,7 @@ async function changePage(window, doExtraWork = false){
 	for(let styleSheet of window.document.styleSheets)
 		await changeStyleSheet(styleSheet);
 	if(doExtraWork)
-		await window.document.querySelectorAll("svg, svg *, [style], " + attributesSelector).map(changeElement);
+		await Promise.all([...window.document.querySelectorAll("svg, svg *, [style], " + attributesSelector)].map(changeElement));
 }
 
 async function changeStyleSheet(styleSheet){
@@ -240,7 +240,7 @@ async function changeStyleSheet(styleSheet){
 			await changeCssRule(cssRule);
 	}
 	catch(e){
-		if(!styleSheet.ownerNode && !styleSheet.disabled)
+		if(styleSheet.ownerNode && !styleSheet.disabled)
 			await replaceCrossOriginStyle(window, styleSheet.href, styleSheet.ownerNode);
 	}
 }
