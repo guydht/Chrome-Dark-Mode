@@ -80,9 +80,9 @@ async function activateDarkMode(window = this.window){
 
 	await new Promise(resolve => {
 		chrome.storage.local.get(["doTransition", "transitionMilliSeconds"],
-		 ({doTransition, transitionMilliSeconds=DEFAULT_TRANSITION_MILLISECONDS}) => {
+		 ({doTransition, transitionMilliSeconds}) => {
 			if(doTransition)
-				tempTransition(window, transitionMilliSeconds);
+				tempTransition(window, transitionMilliSeconds || DEFAULT_TRANSITION_MILLISECONDS);
 			resolve();
 		});
 	});
@@ -173,9 +173,9 @@ async function disableDarkMode(window = this.window){
 	
 	await new Promise(resolve => {
 		chrome.storage.local.get(["doTransition", "transitionMilliSeconds"], 
-		({doTransition, transitionMilliSeconds=DEFAULT_TRANSITION_MILLISECONDS}) => {
+		 ({doTransition, transitionMilliSeconds}) => {
 			if(doTransition)
-				tempTransition(window, transitionMilliSeconds);
+				tempTransition(window, transitionMilliSeconds || DEFAULT_TRANSITION_MILLISECONDS);
 			resolve();
 		});
 	});
