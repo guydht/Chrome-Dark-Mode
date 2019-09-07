@@ -142,7 +142,8 @@ async function activateDarkMode(window = this.window){
 
 	window.document.querySelectorAll("iframe").forEach(frame => {
 		try{
-			frame.contentWindow.document
+			frame.contentWindow.document;
+			window.doEnhancments(frame.contentWindow);
 			activateDarkMode(frame.contentWindow);
 		}catch(e){}
 	});
@@ -231,7 +232,7 @@ async function changePage(window, doExtraWork = false){
 	for(let styleSheet of window.document.styleSheets)
 		await changeStyleSheet(styleSheet);
 	if(doExtraWork)
-		await Promise.all([...window.document.querySelectorAll("svg, svg *, [style], " + attributesSelector)].map(changeElement));
+		await Promise.all(window.document.querySelectorAll("svg, svg *, [style], " + attributesSelector).map(changeElement));
 }
 
 async function changeStyleSheet(styleSheet){
