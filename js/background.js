@@ -17,7 +17,7 @@ chrome.storage.onChanged.addListener(function(data, name){
 		setIcon();
 });
 
-chrome.runtime.onStartup.addListener(setIcon);
+chrome.runtime.onInstalled.addListener(setIcon);
 
 function setIcon(){
 	chrome.storage.local.get("darkTheme", function({darkTheme: response}){
@@ -25,6 +25,6 @@ function setIcon(){
 			'true': 'black',
 			'false': 'white'
 		};
-		chrome.browserAction.setIcon({path: `${mapping[response.toString()]}.png`});
+		chrome.browserAction.setIcon({path: `popup/${mapping[response.toString()]}.png`});
 	});
 }
