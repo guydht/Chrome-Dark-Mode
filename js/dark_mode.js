@@ -137,6 +137,7 @@ async function activateDarkMode(window = this.window){
 
 	window.document.querySelectorAll("iframe").forEach(frame => {
 		try{
+			frame.contentWindow.document
 			activateDarkMode(frame.contentWindow);
 		}catch(e){}
 	});
@@ -189,6 +190,7 @@ async function disableDarkMode(window = this.window){
 	
 	window.document.querySelectorAll("iframe").forEach(frame => {
 		try{
+			frame.contentWindow.document;
 			disableDarkMode(frame.contentWindow);
 		}catch(e){}
 	});
