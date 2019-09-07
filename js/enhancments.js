@@ -141,7 +141,7 @@ function doEnhancements(win){
 		for(var i=0;i<values.length;i++)
 			func(keys[i], values[i], i);
 		};
-	win.Object.defineProperty(win.Node.prototype, "ancestors", {
+	defineProperty(win.Node.prototype, "ancestors", {
 		get(){
 			var arr = [], ele = this.parentNode;
 			while(ele != null){
@@ -151,7 +151,7 @@ function doEnhancements(win){
 			return createNodeList(arr);
 		}
 	});
-	win.Object.defineProperty(win.Node.prototype, "childNodes", {
+	defineProperty(win.Node.prototype, "childNodes", {
 		get(){
 			var arr = [],
 				element = this.firstChild;
@@ -162,7 +162,7 @@ function doEnhancements(win){
 			return createNodeList(arr);
 		}
 	});
-	win.Object.defineProperty(win.Element.prototype, "children", {
+	defineProperty(win.Element.prototype, "children", {
 		get(){
 			var arr = [],
 				element = this.firstElementChild;
@@ -197,12 +197,13 @@ function doEnhancements(win){
 		}
 	};
 	function defineProperty(obj, name, data){
-		if(arguments.length != 3 || name in obj.constructor.prototype) return;
+		if(arguments.length != 3) return;
 		data.enurable = false;
 		data.configurable = true;
 		if(!data.get && !data.set) data.writable = true;
 		win.Object.defineProperty(obj, name, data);
 	}
+	win.defineProperty = defineProperty;
 	defineProperty(win.String.prototype, "decodeEscapeSequence", {
 		value: function() {
 			return this.replace(/\\x([0-9A-Fa-f]{2})/g, function() {
