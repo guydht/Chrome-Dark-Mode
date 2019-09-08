@@ -25,9 +25,7 @@ let darkenParams = [{keepDark: true}, "keepDark"],
 		"fill": "fill",
 		"stroke": "stroke"
 	},
-	DEFAULT_TRANSITION_MILLISECONDS = 400,
-	disabledCssElements = [],
-	addedCssElements = [];
+	DEFAULT_TRANSITION_MILLISECONDS = 400;
 
 defaultStyle.rel = "stylesheet";
 defaultStyle.href = chrome.extension.getURL("css/default_style.css");
@@ -44,9 +42,9 @@ function checkStorage(){
 						|| (currentList === "Blacklist" && !list.includes(location.origin)));
 					await fetchMappingJSON();
 					if(shouldActivate)
-						activateDarkMode();
+						await activateDarkMode();
 					else
-						disableDarkMode();
+						await disableDarkMode();
 					resolve(shouldActivate);
 				});
 			});
@@ -73,9 +71,11 @@ let	savedStyles = new Map,
 let mutationTimeout = new Map;
 
 async function activateDarkMode(window = this.window){
+	window.document.documentElement.style.display = "none";
+
 	if(!window.defaultStyle){
 		window.defaultStyle = defaultStyle.cloneNode(true);
-		window.document.head.prepend(window.defaultStyle)
+		window.document.head.prepend(window.defaultStyle);
 	}
 	else
 		window.defaultStyle.disabled = false;
@@ -89,13 +89,10 @@ async function activateDarkMode(window = this.window){
 		});
 	});
 
-	disabledCssElements.forEach(cssElement => cssElement.disabled = true);
-	addedCssElements.forEach(cssElement => cssElement.disabled = false);
-
 	let currentStyleSheets = [...window.document.styleSheets];
 	window.listenToStyleSheetChange = window.setInterval(() => {
 		if(currentStyleSheets.size != window.document.styleSheets.length){
-			let added = [...window.document.styleSheets].filter(ele => !currentStyleSheets.includes(ele));
+			let added = [...window.document.styleSheets].filter(ele => !currentStyleSheets.includes(ele) && !(ele.ownerNode && ele.ownerNode.dataset.guydhtIgnoreMe === "true"));
 			added.forEach(changeStyleSheet);
 
 			currentStyleSheets = [...window.document.styleSheets];
@@ -106,6 +103,7 @@ async function activateDarkMode(window = this.window){
 		for([prop, val] of Object.entries(value.new))
 			style.setProperty(prop, val);
 	});
+
 	await changePage(window, true);
 
 	listenToPageNodeChanges(window, function(mutationRecords){
@@ -115,7 +113,8 @@ async function activateDarkMode(window = this.window){
 					treeWalker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT);
 				while(treeWalker.nextNode()) newNodes.push(treeWalker.currentNode);
 				for(node of newNodes){
-					if(node.sheet && node.tagName && node.tagName.toLowerCase() == "style")
+					if(node.dataset && node.dataset.guydhtIgnoreMe === "true") continue;
+					if(node.sheet && node.tagName)
 						changeStyleSheet(node.sheet);
 					else if((node.style && node.style[0]) || attributesMapping.values().some(attr => node.hasAttribute(attr))){
 						mutationTimeout.set(node, true);
@@ -124,7 +123,7 @@ async function activateDarkMode(window = this.window){
 					}
 				}
 			}
-			if(mutationRecord.target && mutationRecord.target.tagName.toLowerCase() == "style" && mutationRecord.target.sheet)
+			if(mutationRecord.target && mutationRecord.target.sheet && mutationRecord.target.dataset.guydhtIgnoreMe !== "true")
 				changeStyleSheet(mutationRecord.target.sheet);
 		}
 	});
@@ -139,14 +138,15 @@ async function activateDarkMode(window = this.window){
 			}
 		}
 	});
-
-	window.document.querySelectorAll("iframe").forEach(frame => {
+	for(let frame of window.document.querySelectorAll("iframe")){
 		try{
 			frame.contentWindow.document;
 			window.doEnhancments(frame.contentWindow);
-			activateDarkMode(frame.contentWindow);
+			await activateDarkMode(frame.contentWindow);
 		}catch(e){}
-	});
+	}
+
+	window.document.documentElement.style.display = "initial";
 }
 
 async function changeElement(ele){
@@ -188,22 +188,19 @@ async function disableDarkMode(window = this.window){
 		});
 	});
 
-	disabledCssElements.forEach(cssElement => cssElement.disabled = false);
-	addedCssElements.forEach(cssElement => cssElement.disabled = true);
-
 	savedStyles.forEach((value, style) => {
 		for([prop, val] of Object.entries(value.old))
 			style.setProperty(prop, val);
 	});
 
 	stopListeningToPageStuff();
-	
-	window.document.querySelectorAll("iframe").forEach(frame => {
+
+	for(let frame of window.document.querySelectorAll("iframe")){
 		try{
 			frame.contentWindow.document;
 			disableDarkMode(frame.contentWindow);
 		}catch(e){}
-	});
+	}
 }
 
 let observers = [];
@@ -232,7 +229,8 @@ async function changePage(window, doExtraWork = false){
 	for(let styleSheet of window.document.styleSheets)
 		await changeStyleSheet(styleSheet);
 	if(doExtraWork)
-		await Promise.all(window.document.querySelectorAll("svg, svg *, [style], " + attributesSelector).map(changeElement));
+		for(let element of window.document.querySelectorAll("svg, svg *, [style], " + attributesSelector))
+			await changeElement(element);
 }
 
 async function changeStyleSheet(styleSheet){
@@ -241,7 +239,7 @@ async function changeStyleSheet(styleSheet){
 			await changeCssRule(cssRule);
 	}
 	catch(e){
-		if(styleSheet.ownerNode && !styleSheet.disabled)
+		if(styleSheet.ownerNode)
 			await replaceCrossOriginStyle(window, styleSheet.href, styleSheet.ownerNode);
 	}
 }
@@ -293,14 +291,22 @@ function replaceCrossOriginStyle(window, href, styleElement){
 			request: true,
 			url: href
 		}, function(response){
-			let style = window.document.createElement("style");
-			style.innerHTML = response.responseText;
-			(styleElement || document.head.children[0]).insertAdjacentElement('beforebegin', style);
-			if(styleElement){
-				disabledCssElements.push(styleElement);
-				styleElement.disabled = true;
-			}
-			addedCssElements.push(style);
+			let newNode = styleElement.cloneNode(),
+				text= response.responseText,
+				origin = new URL(response.responseURL).origin;
+			text = text.replace(/url\(\//g, `url(${origin}/`);
+			let blob = new Blob([text], {type: "text/css"});
+			newNode.dataset.guydhtIgnoreMe = 'true';
+			styleElement.after(newNode);
+			styleElement.href = window.URL.createObjectURL(blob);
+			waitFor(function(){
+				try{
+					styleElement.sheet.cssRules;
+					return true;
+				}catch(e){
+					return false;
+				}
+			}, () => newNode.remove());
 			resolve();
 		});
 	});
