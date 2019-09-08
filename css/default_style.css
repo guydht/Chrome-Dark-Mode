@@ -9,11 +9,8 @@ body{
 	background: rgb(20, 20, 20); 
 	color: white;
 }
-input, select, textarea{
+input, select, textarea, option{
 	color: white;
-	background: transparent;
-}
-option{
 	background: rgb(20, 20, 20);
 }
 button{
