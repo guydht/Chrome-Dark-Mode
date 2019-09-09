@@ -11,7 +11,7 @@ body{
 }
 input, select, textarea, option{
 	color: white;
-	background: rgb(20, 20, 20);
+	background: rgba(20, 20, 20, 0.7);
 }
 button{
 	background: rgb(60, 60, 60); 
