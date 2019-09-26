@@ -20,7 +20,7 @@ chrome.storage.onChanged.addListener(function(data, name){
 chrome.runtime.onInstalled.addListener(setIcon);
 
 function setIcon(){
-	chrome.storage.local.get("darkTheme", function({darkTheme: response}){
+	chrome.storage.local.get("darkTheme", function({darkTheme: response=false}){
 		let mapping = {
 			'true': 'black',
 			'false': 'white'
