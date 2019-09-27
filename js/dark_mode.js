@@ -1,6 +1,6 @@
-let darkenParams = [{keepDark: true}, "keepDark"],
-	brightenParams = [{keepBright: true}, "keepBright"],
-	alwaysChangeParams = [{doInversion: true}, "doInversion"],
+let darkenParams = [{ keepDark: true }, "keepDark"],
+	brightenParams = [{ keepBright: true }, "keepBright"],
+	alwaysChangeParams = [{ doInversion: true }, "doInversion"],
 	defaultStyle = document.createElement("link"),
 	darkThemeInterval,
 	propertiesMapping = {
@@ -30,18 +30,18 @@ let darkenParams = [{keepDark: true}, "keepDark"],
 defaultStyle.rel = "stylesheet";
 defaultStyle.href = chrome.extension.getURL("css/default_style.css");
 
-checkStorage();
+checkStorage().then(active => active && console.log("%cDark Mode Activated", "font-size: 2rem; color: blue;"));
 
-function checkStorage(){
+function checkStorage() {
 	return new Promise(resolve => {
-		chrome.storage.sync.get("currentList", function({currentList = "BlackList"}){
-			chrome.storage.sync.get(currentList, function({[currentList]: list = []}){
-				chrome.storage.local.get("darkTheme", async function({darkTheme = false}){
+		chrome.storage.sync.get("currentList", function ({ currentList = "BlackList" }) {
+			chrome.storage.sync.get(currentList, function ({ [currentList]: list = [] }) {
+				chrome.storage.local.get("darkTheme", async function ({ darkTheme = false }) {
 					let shouldActivate = darkTheme &&
 						((currentList === "Whitelist" && list.includes(location.origin))
-						|| (currentList === "Blacklist" && !list.includes(location.origin)));
+							|| (currentList === "Blacklist" && !list.includes(location.origin)));
 					await fetchMappingJSON();
-					if(shouldActivate)
+					if (shouldActivate)
 						await activateDarkMode();
 					else
 						await disableDarkMode();
@@ -53,27 +53,27 @@ function checkStorage(){
 }
 
 let mappingWithRegex = [];
-async function fetchMappingJSON(){
+async function fetchMappingJSON() {
 	let mapping = await fetch(chrome.extension.getURL("json/colorNameMappings.json")).then(r => r.json());
 	Object.entries(mapping).forEach(([key, val]) => {
 		mappingWithRegex.push([new RegExp(`(?<!\\S)(${key})(?!\\S)`), val]);
 	});
 }
 
-chrome.storage.onChanged.addListener(function(data){
-	if(data.darkTheme || data.currentList || data.Blacklist || data.WhiteList)
+chrome.storage.onChanged.addListener(function (data) {
+	if (data.darkTheme || data.currentList || data.Blacklist || data.WhiteList)
 		checkStorage();
 });
 
-let	savedStyles = new Map,
+let savedStyles = new Map,
 	changedStyles = {};
 
 let mutationTimeout = new Map;
 
-async function activateDarkMode(window = this.window){
+async function activateDarkMode(window = this.window) {
 	window.document.documentElement.style.display = "none";
 
-	if(!window.defaultStyle){
+	if (!window.defaultStyle) {
 		window.defaultStyle = defaultStyle.cloneNode(true);
 		window.document.head.prepend(window.defaultStyle);
 	}
@@ -82,16 +82,16 @@ async function activateDarkMode(window = this.window){
 
 	await new Promise(resolve => {
 		chrome.storage.local.get(["doTransition", "transitionMilliSeconds"],
-		 ({doTransition, transitionMilliSeconds}) => {
-			if(doTransition)
-				tempTransition(window, transitionMilliSeconds || DEFAULT_TRANSITION_MILLISECONDS);
-			resolve();
-		});
+			({ doTransition, transitionMilliSeconds }) => {
+				if (doTransition)
+					tempTransition(window, transitionMilliSeconds || DEFAULT_TRANSITION_MILLISECONDS);
+				resolve();
+			});
 	});
 
 	let currentStyleSheets = [...window.document.styleSheets];
 	window.listenToStyleSheetChange = window.setInterval(() => {
-		if(currentStyleSheets.size != window.document.styleSheets.length){
+		if (currentStyleSheets.size != window.document.styleSheets.length) {
 			let added = [...window.document.styleSheets].filter(ele => !currentStyleSheets.includes(ele) && !(ele.ownerNode && ele.ownerNode.dataset.guydhtIgnoreMe === "true"));
 			added.forEach(changeStyleSheet);
 
@@ -100,37 +100,37 @@ async function activateDarkMode(window = this.window){
 	});
 
 	savedStyles.forEach((value, style) => {
-		for([prop, val] of Object.entries(value.new))
+		for ([prop, val] of Object.entries(value.new))
 			style.setProperty(prop, val);
 	});
 
 	await changePage(window, true);
 
-	listenToPageNodeChanges(window, function(mutationRecords){
-		for(let mutationRecord of mutationRecords){
-			for(let node of mutationRecord.addedNodes){
+	listenToPageNodeChanges(window, function (mutationRecords) {
+		for (let mutationRecord of mutationRecords) {
+			for (let node of mutationRecord.addedNodes) {
 				let newNodes = [],
 					treeWalker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT);
-				while(treeWalker.nextNode()) newNodes.push(treeWalker.currentNode);
-				for(node of newNodes){
-					if(node.dataset && node.dataset.guydhtIgnoreMe === "true") continue;
-					if(node.sheet && node.tagName)
+				while (treeWalker.nextNode()) newNodes.push(treeWalker.currentNode);
+				for (node of newNodes) {
+					if (node.dataset && node.dataset.guydhtIgnoreMe === "true") continue;
+					if (node.sheet && node.tagName)
 						changeStyleSheet(node.sheet);
-					else if((node.style && node.style[0]) || attributesMapping.values().some(attr => node.hasAttribute(attr))){
+					else if ((node.style && node.style[0]) || attributesMapping.values().some(attr => node.hasAttribute(attr))) {
 						mutationTimeout.set(node, true);
 						changeElement(node);
 						mutationTimeout.set(node, false);
 					}
 				}
 			}
-			if(mutationRecord.target && mutationRecord.target.sheet && mutationRecord.target.dataset.guydhtIgnoreMe !== "true")
+			if (mutationRecord.target && mutationRecord.target.sheet && mutationRecord.target.dataset.guydhtIgnoreMe !== "true")
 				changeStyleSheet(mutationRecord.target.sheet);
 		}
 	});
-	listenToAttributesChanges(window, function(mutationRecords){
-		for(let mutationRecord of mutationRecords){
-			if(mutationRecord.attributeName == 'style'){
-				if(!mutationTimeout.get(mutationRecord.target)){
+	listenToAttributesChanges(window, function (mutationRecords) {
+		for (let mutationRecord of mutationRecords) {
+			if (mutationRecord.attributeName == 'style') {
+				if (!mutationTimeout.get(mutationRecord.target)) {
 					mutationTimeout.set(mutationRecord.target, true);
 					setTimeout(() => mutationTimeout.set(mutationRecord.target, false));
 					changeStyle(mutationRecord.target.style, true);
@@ -138,32 +138,32 @@ async function activateDarkMode(window = this.window){
 			}
 		}
 	});
-	for(let frame of window.document.querySelectorAll("iframe")){
-		try{
+	for (let frame of window.document.querySelectorAll("iframe")) {
+		try {
 			frame.contentWindow.document;
 			window.doEnhancments(frame.contentWindow);
 			await activateDarkMode(frame.contentWindow);
-		}catch(e){}
+		} catch (e) { }
 	}
 
 	window.document.documentElement.style.display = "initial";
 }
 
-async function changeElement(ele){
-	if(
-		(ele.tagName && ele.tagName.toLowerCase() == "svg") || 
+async function changeElement(ele) {
+	if (
+		(ele.tagName && ele.tagName.toLowerCase() == "svg") ||
 		ele.ancestors.some(ele => ele.tagName && ele.tagName.toLowerCase() == "svg") ||
 		attributesMapping.values().some(attr => ele.hasAttribute(attr))
-	){
+	) {
 		let changes = await changeStyle(getComputedStyle(ele));
 		ele.setProperty = ele.setAttribute.bind(ele);
-		for(let [prop, oldVal, newVal] of changes){
-			if(attributesMapping[prop] && ele.hasAttribute(attributesMapping[prop])){
+		for (let [prop, oldVal, newVal] of changes) {
+			if (attributesMapping[prop] && ele.hasAttribute(attributesMapping[prop])) {
 				prop = attributesMapping[prop];
 				addToPrevStyle(ele, prop, oldVal, newVal);
 				ele.setAttribute(prop, newVal);
 			}
-			else if(ele.style[prop]){
+			else if (ele.style[prop]) {
 				addToPrevStyle(ele.style, prop, oldVal, newVal);
 				ele.style.setProperty(prop, newVal);
 			}
@@ -173,38 +173,38 @@ async function changeElement(ele){
 		await changeStyle(ele.style, true);
 }
 
-async function disableDarkMode(window = this.window){
-	if(window.defaultStyle)
+async function disableDarkMode(window = this.window) {
+	if (window.defaultStyle)
 		window.defaultStyle.disabled = true;
 
 	window.clearInterval(window.listenToStyleSheetChange);
-	
+
 	await new Promise(resolve => {
-		chrome.storage.local.get(["doTransition", "transitionMilliSeconds"], 
-		 ({doTransition, transitionMilliSeconds}) => {
-			if(doTransition)
-				tempTransition(window, transitionMilliSeconds || DEFAULT_TRANSITION_MILLISECONDS);
-			resolve();
-		});
+		chrome.storage.local.get(["doTransition", "transitionMilliSeconds"],
+			({ doTransition, transitionMilliSeconds }) => {
+				if (doTransition)
+					tempTransition(window, transitionMilliSeconds || DEFAULT_TRANSITION_MILLISECONDS);
+				resolve();
+			});
 	});
 
 	savedStyles.forEach((value, style) => {
-		for([prop, val] of Object.entries(value.old))
+		for ([prop, val] of Object.entries(value.old))
 			style.setProperty(prop, val);
 	});
 
 	stopListeningToPageStuff();
 
-	for(let frame of window.document.querySelectorAll("iframe")){
-		try{
+	for (let frame of window.document.querySelectorAll("iframe")) {
+		try {
 			frame.contentWindow.document;
 			disableDarkMode(frame.contentWindow);
-		}catch(e){}
+		} catch (e) { }
 	}
 }
 
 let observers = [];
-function listenToPageNodeChanges(window, callback){
+function listenToPageNodeChanges(window, callback) {
 	let observer = new MutationObserver(callback);
 	observers.push(observer);
 	observer.observe(window.document.documentElement, {
@@ -212,7 +212,7 @@ function listenToPageNodeChanges(window, callback){
 		subtree: true
 	});
 }
-function listenToAttributesChanges(window, callback){
+function listenToAttributesChanges(window, callback) {
 	let observer = new MutationObserver(callback);
 	observers.push(observer);
 	observer.observe(window.document.documentElement, {
@@ -220,90 +220,90 @@ function listenToAttributesChanges(window, callback){
 		attributes: true
 	});
 }
-function stopListeningToPageStuff(){
+function stopListeningToPageStuff() {
 	observers.forEach(observer => observer.disconnect());
 }
 
 let attributesSelector = attributesMapping.values().map(ele => `[${ele}]`).join(", ");
-async function changePage(window, doExtraWork = false){
-	for(let styleSheet of window.document.styleSheets)
+async function changePage(window, doExtraWork = false) {
+	for (let styleSheet of window.document.styleSheets)
 		await changeStyleSheet(styleSheet);
-	if(doExtraWork)
-		for(let element of window.document.querySelectorAll("svg, svg *, [style], " + attributesSelector))
+	if (doExtraWork)
+		for (let element of window.document.querySelectorAll("svg, svg *, [style], " + attributesSelector))
 			await changeElement(element);
 }
 
-async function changeStyleSheet(styleSheet){
-	try{
-		for(let cssRule of styleSheet.cssRules)
+async function changeStyleSheet(styleSheet) {
+	try {
+		for (let cssRule of styleSheet.cssRules)
 			await changeCssRule(cssRule);
 	}
-	catch(e){
-		if(styleSheet.ownerNode)
+	catch (e) {
+		if (styleSheet.ownerNode)
 			await replaceCrossOriginStyle(window, styleSheet.href, styleSheet.ownerNode);
 	}
 }
 
-async function changeCssRule(cssRule){
+async function changeCssRule(cssRule) {
 	let style = cssRule.style;
-	if(style)
+	if (style)
 		await changeStyle(style, true);
-	if(cssRule.styleSheet)
+	if (cssRule.styleSheet)
 		await changeStyleSheet(cssRule.styleSheet);
-	else if(cssRule.cssRules)
-		for(let childCssRule of cssRule.cssRules)
+	else if (cssRule.cssRules)
+		for (let childCssRule of cssRule.cssRules)
 			await changeCssRule(childCssRule);
 }
 
-function isDarkRGB(rgbArr){
+function isDarkRGB(rgbArr) {
 	return rgbArr.reduce((acc, ele) => acc + ele, 0) / rgbArr.length <= 150;
 }
 
-function isBlackOrWhite(rgbArr){
+function isBlackOrWhite(rgbArr) {
 	return Math.max(...rgbArr) - Math.min(...rgbArr) < 15;
 }
 
-function isBrightRGB(rgbArr){
+function isBrightRGB(rgbArr) {
 	return rgbArr.reduce((acc, ele) => acc + ele, 0) / rgbArr.length >= 180 || rgbArr.max() > 250;
 }
 
-function rgbTextToRGB(rgbText){
+function rgbTextToRGB(rgbText) {
 	arr = rgbText.substringLastIndexOf("(", 1).substringLastIndexOf(0, ")").split(",").map(Number);
 	return [arr.slice(0, 3), arr[3]];
 }
 
-function darkenRGB(rgbArr){
+function darkenRGB(rgbArr) {
 	return lightenRGB(rgbArr, 50);
 }
 
-function lightenRGB(rgbArr, newAvg = 200){
+function lightenRGB(rgbArr, newAvg = 200) {
 	let oldAvg = rgbArr.reduce((a, b) => a + b, 0) / rgbArr.length;
 	return rgbArr.map(ele => Math.min(255, Math.max(0, ele - oldAvg + newAvg)));
 }
 
-function invertRGB(rgbArr, offset = 0){
+function invertRGB(rgbArr, offset = 0) {
 	return rgbArr.map(ele => Math.min(255, 255 - ele + offset));
 }
 
-function replaceCrossOriginStyle(window, href, styleElement){
+function replaceCrossOriginStyle(window, href, styleElement) {
 	return new Promise(resolve => {
 		chrome.runtime.sendMessage({
 			request: true,
 			url: href
-		}, function(response){
+		}, function (response) {
 			let newNode = styleElement.cloneNode(),
-				text= response.responseText,
+				text = response.responseText,
 				origin = new URL(response.responseURL).origin;
 			text = text.replace(/url\(\//g, `url(${origin}/`);
-			let blob = new Blob([text], {type: "text/css"});
+			let blob = new Blob([text], { type: "text/css" });
 			newNode.dataset.guydhtIgnoreMe = 'true';
 			styleElement.after(newNode);
 			styleElement.href = window.URL.createObjectURL(blob);
-			waitFor(function(){
-				try{
+			waitFor(function () {
+				try {
 					styleElement.sheet.cssRules;
 					return true;
-				}catch(e){
+				} catch (e) {
 					return false;
 				}
 			}, () => newNode.remove());
@@ -312,62 +312,62 @@ function replaceCrossOriginStyle(window, href, styleElement){
 	});
 }
 
-function colorHasSomethingThatLooksLikeAColorName(color){
+function colorHasSomethingThatLooksLikeAColorName(color) {
 	return /(?<!\S)([a-zA-Z]+)(?!\S)/.test(color);
 }
 
-function colorNameToRGB(color){
-	if(colorHasSomethingThatLooksLikeAColorName(color))
+function colorNameToRGB(color) {
+	if (colorHasSomethingThatLooksLikeAColorName(color))
 		mappingWithRegex.forEach(([reg, value]) => {
-			if(reg.test(color))
+			if (reg.test(color))
 				color = color.replace(reg, "rgb" + value);
 		});
 	return color;
 }
 
-function hexToRGB(hex){
-    let shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;;
-	hex = hex.replace(shorthandRegex, function(m, r, g, b) {
+function hexToRGB(hex) {
+	let shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;;
+	hex = hex.replace(shorthandRegex, function (m, r, g, b) {
 		return r + r + g + g + b + b;
-    });
+	});
 	let bigint = parseInt(hex, 16),
 		r = (bigint >> 16) & 255,
 		g = (bigint >> 8) & 255,
 		b = bigint & 255;
-    return `(${r}, ${g}, ${b})`;
+	return `(${r}, ${g}, ${b})`;
 }
 
-async function changeStyle(cssStyleDecleration, setStyle = false){
+async function changeStyle(cssStyleDecleration, setStyle = false) {
 	let changesArr = [];
 	propertiesMapping.entries().forEach(([prop, params]) => {
-		if(!params || typeof params === "function") return;
+		if (!params || typeof params === "function") return;
 		let originalStyleText = colorNameToRGB(cssStyleDecleration.getPropertyValue(prop)),
 			found = changedStyles[params[1] + originalStyleText];
-		if(found)
+		if (found)
 			return changesArr.push([prop, originalStyleText, found]);
 		let newStyleText = originalStyleText,
 			colors = newStyleText.match(/\(([0-9]+,\s)+[0-9]+\.?[0-9]*\)|\#[a-zA-Z0-9]+/g) || [];
 		colors.forEach(color => {
 			newStyleText = newStyleText.replace(color, changeColor(color, params[0]));
 		});
-		if (newStyleText !== originalStyleText){
+		if (newStyleText !== originalStyleText) {
 			changesArr.push([prop, originalStyleText, newStyleText]);
 			changedStyles[params[1] + originalStyleText] = newStyleText;
 		}
 	});
-	if(setStyle)
-		for(let [prop, oldVal, newVal] of changesArr){
+	if (setStyle)
+		for (let [prop, oldVal, newVal] of changesArr) {
 			addToPrevStyle(cssStyleDecleration, prop, oldVal, newVal, newVal);
 			cssStyleDecleration.setProperty(prop, newVal);
 		}
 	return changesArr;
 }
 
-function addToPrevStyle(style, prop, currentVal, newVal){
+function addToPrevStyle(style, prop, currentVal, newVal) {
 	let exists = savedStyles.get(style);
-	if(!exists){
+	if (!exists) {
 		exists = {
-			new: {}, 
+			new: {},
 			old: {}
 		};
 		savedStyles.set(style, exists);
@@ -376,31 +376,31 @@ function addToPrevStyle(style, prop, currentVal, newVal){
 	exists.old[prop] = currentVal;
 }
 
-function changeColor(color, params){
-	if(color.startsWith("#"))
+function changeColor(color, params) {
+	if (color.startsWith("#"))
 		color = hexToRGB(color.substring(1));
 	let rgba = rgbTextToRGB(color),
 		opacityString = '';
-	if(rgba[1] !== undefined)
+	if (rgba[1] !== undefined)
 		opacityString = `, ${rgba[1]}`;
 	return `(${changeRGB(rgba[0], params).join(", ") + opacityString})`;
 }
 
-function changeRGB(rgbArr, {keepDark, keepBright, doInversion}){
-	if(doInversion){
-		if(isBlackOrWhite(rgbArr))
+function changeRGB(rgbArr, { keepDark, keepBright, doInversion }) {
+	if (doInversion) {
+		if (isBlackOrWhite(rgbArr))
 			rgbArr = invertRGB(rgbArr);
 		else
 			rgbArr = isDarkRGB(rgbArr) ? lightenRGB(rgbArr) : isBrightRGB(rgbArr) ? darkenRGB(rgbArr) : rgbArr;
 	}
-	else if(!keepDark && isDarkRGB(rgbArr)){
-		if(isBlackOrWhite(rgbArr))
+	else if (!keepDark && isDarkRGB(rgbArr)) {
+		if (isBlackOrWhite(rgbArr))
 			rgbArr = invertRGB(rgbArr);
 		else
 			rgbArr = lightenRGB(rgbArr);
 	}
-	else if (!keepBright && isBrightRGB(rgbArr)){
-		if(isBlackOrWhite(rgbArr))
+	else if (!keepBright && isBrightRGB(rgbArr)) {
+		if (isBlackOrWhite(rgbArr))
 			rgbArr = invertRGB(rgbArr, 30);
 		else
 			rgbArr = darkenRGB(rgbArr);
@@ -408,12 +408,12 @@ function changeRGB(rgbArr, {keepDark, keepBright, doInversion}){
 	return rgbArr;
 }
 
-function tempTransition(window, transitionTimeInMilliseconds){
+function tempTransition(window, transitionTimeInMilliseconds) {
 	let tmp = window.document.createElement("style");
 	tmp.innerHTML = ":root, :root *{transition: ";
 	propertiesMapping.entries().forEach(([prop, params]) => {
-		if(params !== brightenParams)
-			tmp.innerHTML += `${prop.replace(/[A-Z]/g, l => '-' + l.toLowerCase())} ${ transitionTimeInMilliseconds}ms ease-out, `;
+		if (params !== brightenParams)
+			tmp.innerHTML += `${prop.replace(/[A-Z]/g, l => '-' + l.toLowerCase())} ${transitionTimeInMilliseconds}ms ease-out, `;
 	});
 	tmp.innerHTML = tmp.innerHTML.slice(0, -2) + " !important;}";
 	setTimeout(tmp.remove.bind(tmp), transitionTimeInMilliseconds);
