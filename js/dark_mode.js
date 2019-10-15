@@ -91,13 +91,13 @@ async function activateDarkMode(window = this.window) {
 
 	let currentStyleSheets = [...window.document.styleSheets];
 	window.listenToStyleSheetChange = window.setInterval(() => {
-		if (currentStyleSheets.length != window.document.styleSheets.length) {
+		if (currentStyleSheets.length !== window.document.styleSheets.length) {
 			let added = [...window.document.styleSheets].filter(ele => !currentStyleSheets.includes(ele) && !(ele.ownerNode && ele.ownerNode.dataset.guydhtIgnoreMe === "true"));
 			added.forEach(changeStyleSheet);
 
 			currentStyleSheets = [...window.document.styleSheets];
 		}
-	});
+	}, 100);
 
 	savedStyles.forEach((value, style) => {
 		for ([prop, val] of Object.entries(value.new))
@@ -304,7 +304,7 @@ function replaceCrossOriginStyle(window, href, styleElement) {
 					styleElement.sheet.cssRules;
 					return true;
 				} catch (e) {
-					return false;
+					return !styleElement.parentNode;
 				}
 			}, () => newNode.remove());
 			resolve();
