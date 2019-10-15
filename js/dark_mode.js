@@ -30,7 +30,7 @@ let darkenParams = [{ keepDark: true }, "keepDark"],
 defaultStyle.rel = "stylesheet";
 defaultStyle.href = chrome.extension.getURL("css/default_style.css");
 
-checkStorage().then(active => active && console.log("%cDark Mode Activated", "font-size: 2rem; color: blue;"));
+checkStorage().then(active => active && window === window.top && console.log("%cDark Mode Activated", "font-size: 2rem; color: blue;"));
 
 function checkStorage() {
 	return new Promise(resolve => {
@@ -91,7 +91,7 @@ async function activateDarkMode(window = this.window) {
 
 	let currentStyleSheets = [...window.document.styleSheets];
 	window.listenToStyleSheetChange = window.setInterval(() => {
-		if (currentStyleSheets.size != window.document.styleSheets.length) {
+		if (currentStyleSheets.length != window.document.styleSheets.length) {
 			let added = [...window.document.styleSheets].filter(ele => !currentStyleSheets.includes(ele) && !(ele.ownerNode && ele.ownerNode.dataset.guydhtIgnoreMe === "true"));
 			added.forEach(changeStyleSheet);
 
